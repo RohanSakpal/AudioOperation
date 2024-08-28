@@ -1,0 +1,23 @@
+<html>
+  <label>
+    Zoom: <input
+    type="range" min="10" max="1000"
+    [(ngModel)]="zoomValue" (input)="onZoomChange($event)"/>
+  </label>
+
+  <label>
+    0.25x <input type="range" min="0" max="4" step="1" [(ngModel)]="speedValue"
+    [(ngModel)]="speedValue" (input)="onSpeedChange($event)"/> 4x
+  </label>
+
+  <label>
+    Preserve pitch <input type="checkbox" [(ngModel)]="preserveValue" (change)="onPreservChange()"/>
+  </label>
+  <button (click)="playPause()">Play/pause</button>
+  <button (click)="forward()">Forward (5 Sec)</button>
+  <button (click)="backward()">Backward (5 Sec)</button>
+  <p>Open the console to see the event logs</p>
+
+
+  
+</html>

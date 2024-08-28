@@ -1,0 +1,6 @@
+<input type="file" (change)="onFileSelected($event)" accept="audio/mp3" />
+
+<!-- Placeholder for dynamic waveform -->
+<div #waveformContainer></div>
+
+<button (click)="playAudio()">Play Audio</button>

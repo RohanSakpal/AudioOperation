@@ -1,0 +1,35 @@
+<div id="waveform"></div>
+
+<p>
+    <label>
+        <input type="checkbox" checked="${loop}" />
+        Loop regions
+    </label>
+
+    <label style="margin-left: 2em">
+        Zoom: <input type="range" min="10" max="1000" value="10" />
+    </label>
+
+    <button (click)="playAudio()">Play Audio</button>
+</p>
+<input type="file" (change)="onFileSelected($event)" accept="audio/mp3" />
+
+<h2>Selected Region Table</h2>
+<table *ngIf="regionArr.length > 0">
+    <tr>
+        <th>RegionId</th>
+        <th>Start</th>
+        <th>End</th>
+    </tr>
+    <tr *ngFor="let reg of regionArr">
+        <th>{{reg.id}}</th>
+        <th>{{reg.start | number:'1.0-0'}}</th>
+        <th>{{reg.end | number:'1.0-0'}}</th>
+    </tr>
+</table>
+
+<button *ngIf="regionArr.length > 0" (click)="mergeAudioPart()">Merge</button>
+
+<audio controls id="merged-track">
+    <source src="" >
+  </audio>
