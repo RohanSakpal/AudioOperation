@@ -1,33 +1,30 @@
-import { Component } from '@angular/core';
+import { Component, ElementRef, Renderer2, ViewChild } from '@angular/core';
 import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions';
-import TimelinePlugin from 'wavesurfer.js/dist/plugins/timeline';
 import Hover from 'wavesurfer.js/dist/plugins/hover';
 
 @Component({
-  selector: 'app-merge-part',
-  templateUrl: './merge-part.component.html',
-  styleUrls: ['./merge-part.component.scss']
+  selector: 'app-upload-merge',
+  templateUrl: './upload-merge.component.html',
+  styleUrls: ['./upload-merge.component.scss']
 })
-export class MergePartComponent {
+export class UploadMergeComponent {
+  @ViewChild('waveformContainer', { static: true }) waveformContainer!: ElementRef;
+
   wavesurfer!: WaveSurfer;
-  regions = RegionsPlugin.create();
-  activeRegion:any = null;
-  loop:boolean = false;
-  regionArr:any[] = [];
+  currentTime: number = 0;
+  totalTime: number = 0;
+
   audioBuffer: AudioBuffer | null = null;
   arrBuffer: ArrayBuffer | null = null;
   audioFile!: File;
+
   isPlay:boolean = false;
-  bottomTimeline = TimelinePlugin.create({
-    height: 10,
-    timeInterval: 0.1,
-    primaryLabelInterval: 5,
-    style: {
-      fontSize: '10px',
-      color: '#6A3274',
-    },
-  });
+
+  regions = RegionsPlugin.create();
+  regionArr:any[] = [];
+  activeRegion:any = null;
+  loop:boolean = false;
 
   hoverPlugin = Hover.create({
     lineColor: '#ff0000',
@@ -37,86 +34,76 @@ export class MergePartComponent {
     labelSize: '11px',
   });
 
-  ngAfterViewInit() {
-    this.wavesurfer = WaveSurfer.create({
-      container: '#waveform',
-      waveColor: 'rgb(200, 0, 200)',
-      progressColor: 'rgb(100, 0, 100)',
-      url: '../../assets/Stree_2.mp3',
-      plugins: [this.regions,this.bottomTimeline,this.hoverPlugin],
-    });
 
-    this.wavesurfer.on('decode', () => {
-      // this.regions.addRegion({
-      //   start: 0,
-      //   end: 30,
-      //   //content: 'Resize me',
-      //   color: this.randomColor(),
-      //   drag: false,
-      //   resize: true,
-      // });
+  constructor(private renderer: Renderer2) {}
 
-      // this.regions.addRegion({
-      //   start: 50,
-      //   end: 100,
-      //   //content: 'Cramped region',
-      //   color: this.randomColor(),
-      //   minLength: 1,
-      //   maxLength: 10,
-      // });
+  onFileSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) {
+      if (this.wavesurfer) {
+        this.wavesurfer.destroy();
+        this.regionArr = [];
+        this.waveformContainer.nativeElement.innerHTML = '';
+    }
+      this.audioFile =file;
+      // Create a new waveform div dynamically
+      const waveformDiv = this.renderer.createElement('div');
+      this.renderer.setAttribute(waveformDiv, 'id', 'waveform');
+      this.renderer.appendChild(this.waveformContainer.nativeElement, waveformDiv);
 
-      // this.regions.addRegion({
-      //   start: 150,
-      //   end: 200,
-      //   content: 'Drag me',
-      //   color: this.randomColor(),
-      //   resize: false,
-      // });
-
-      this.regions.enableDragSelection({
-        color: 'rgba(255, 0, 0, 0.1)',
+      // Initialize WaveSurfer with the new div container
+      this.wavesurfer = WaveSurfer.create({
+        container: waveformDiv,
+        waveColor: 'violet',
+        progressColor: 'purple',
+        plugins: [this.regions,this.hoverPlugin]
       });
 
-      this.regions.on('region-updated', (region) => {
-        console.log('Updated region', region)
-      });
-
-      this.regions.on('region-in', (region) => {
-        console.log('region-in', region)
-        this.activeRegion = region
-      });
-
-      this.regions.on('region-created', (region) => {
-        this.regionArr = this.regions.getRegions();
-      });
-
-      this.regions.on('region-out', (region) => {
-        console.log('region-out', region)
-        if (this.activeRegion === region) {
-          if (this.loop) {
-            region.play()
-          } else {
-            this.activeRegion = null
+      this.wavesurfer.on('decode', () => {
+        this.totalTime = this.wavesurfer.getDuration();
+        this.regions.enableDragSelection({
+          //color: 'rgba(255, 0, 0, 0.1)',
+          color : this.randomColor(),
+        });
+  
+        this.regions.on('region-in', (region) => {
+          this.activeRegion = region
+        });
+  
+        this.regions.on('region-created', (region) => {
+          this.regionArr = this.regions.getRegions();
+        });
+  
+        this.regions.on('region-out', (region) => {
+          if (this.activeRegion === region) {
+            if (this.loop) {
+              region.play();
+            } else {
+              this.activeRegion = null;
+            }
           }
-        }
+        });
+  
+        this.regions.on('region-clicked', (region, e) => {
+          e.stopPropagation() // prevent triggering a click on the waveform
+          this.activeRegion = region;
+          region.play();
+        })
+
+        this.wavesurfer.on('timeupdate', (currentTime) => {
+          this.currentTime = currentTime;
+        })
       });
 
-      this.regions.on('region-clicked', (region, e) => {
-        e.stopPropagation() // prevent triggering a click on the waveform
-        this.activeRegion = region
-        region.play()
-        console.log(this.regions)
-        //region.setOptions({ color: 'hsla(2, 100%, 39%, 1)' })
-      })
-    });
-
-    this.wavesurfer.on('interaction', () => {
-      this.activeRegion = null
-    });
-
-    this.wavesurfer.on('drag', (relativeX) => {
-      console.log('Drag', relativeX)
-    });
+      const reader = new FileReader();
+      reader.onload = () => {
+        const arrayBuffer = reader.result as ArrayBuffer;
+        const blob = new Blob([arrayBuffer], { type: 'audio/mp3' });
+        this.wavesurfer.loadBlob(blob);
+      };
+      reader.readAsArrayBuffer(file);
+      this.readAndDecodeAudio();
+    }
   }
 
   random(min: number, max: number): number {
@@ -127,34 +114,10 @@ export class MergePartComponent {
     return `rgba(${this.random(0, 255)}, ${this.random(0, 255)}, ${this.random(0, 255)}, 0.5)`;
   }
 
-  playAudio(): void {
-    if (this.wavesurfer) {
-      if(!this.isPlay) {
-        this.wavesurfer.play();
-        this.isPlay = !this.isPlay;
-      } else {
-        this.wavesurfer.pause();
-        this.isPlay = !this.isPlay;
-      }
-      
-    }
-  }
-
-  onFileSelected(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) {
-      this.audioFile = file;
-
-      // Call the method to read and decode audio
-      this.readAndDecodeAudio();
-    }
-  }
-
   async readAndDecodeAudio() {
     try {
       this.arrBuffer = await this.readAudio(this.audioFile);
       this.audioBuffer = await new AudioContext().decodeAudioData(this.arrBuffer!);
-      console.log('Decoded audio buffer:', this.audioBuffer);
     } catch (error) {
       window.alert('Error occurred while decoding audio.');
     }
@@ -181,6 +144,18 @@ export class MergePartComponent {
     });
   }
 
+  playAudio(): void {
+    if (this.wavesurfer) {
+      if(!this.isPlay) {
+        this.wavesurfer.play();
+        this.isPlay = !this.isPlay;
+      } else {
+        this.wavesurfer.pause();
+        this.isPlay = !this.isPlay;
+      }
+    }
+  }
+
   mergeAudioPart() {
     if(this.regionArr.length > 0) {
       this.mergeAudio(this.regionArr);
@@ -193,6 +168,8 @@ export class MergePartComponent {
 
     audioList.forEach(region => {
       const regionDuration = region.end - region.start;
+      console.log(this.audioBuffer)
+      console.log(this.audioBuffer?.length)
       const startPoint = Math.floor((region.start * this.audioBuffer!.length) / this.wavesurfer.getDuration());
       const endPoint = Math.ceil((region.end * this.audioBuffer!.length) / this.wavesurfer.getDuration());
       const audioLength = endPoint - startPoint;
@@ -234,7 +211,6 @@ export class MergePartComponent {
   encodeAudioBufferLame(audioData: any): Promise<void> {
     return new Promise((resolve, reject) => {
       const worker = new Worker(new URL('../app.worker.ts', import.meta.url), { type: 'module' });
-      console.log(worker);
       worker.onmessage = (event) => {
         if (event.data) {
           const blob = new Blob(event.data.res, { type: 'audio/mp3' });
@@ -250,5 +226,4 @@ export class MergePartComponent {
       worker.postMessage({ audioData });
     });
   }
-  
 }

@@ -10,6 +10,9 @@ import { RegionComponent } from './region/region.component';
 import { UploadComponent } from './upload/upload.component';
 import { MultiUploadComponent } from './multi-upload/multi-upload.component';
 import { MergePartComponent } from './merge-part/merge-part.component';
+import { UploadMergeComponent } from './upload-merge/upload-merge.component';
+import { MergeMultipleFileComponent } from './merge-multiple-file/merge-multiple-file.component';
+import { MergePartWithoutLibComponent } from './merge-part-without-lib/merge-part-without-lib.component';
 
 @NgModule({
   declarations: [
@@ -20,6 +23,9 @@ import { MergePartComponent } from './merge-part/merge-part.component';
     UploadComponent,
     MultiUploadComponent,
     MergePartComponent,
+    UploadMergeComponent,
+    MergeMultipleFileComponent,
+    MergePartWithoutLibComponent,
   ],
   imports: [
     BrowserModule,

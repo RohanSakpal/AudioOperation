@@ -1,0 +1,28 @@
+<input type="file" (change)="onFileSelected($event)" accept="audio/mp3" />
+
+<!-- Placeholder for dynamic waveform -->
+<div #waveformContainer id="waveformContainer"></div>
+<div><h1>{{currentTime}} / {{totalTime}}</h1></div>
+
+<h2>Selected Region Table</h2>
+<table *ngIf="regionArr.length > 0">
+    <tr>
+        <th>RegionId</th>
+        <th>Start</th>
+        <th>End</th>
+    </tr>
+    <tr *ngFor="let reg of regionArr">
+        <th>{{reg.id}}</th>
+        <th>{{reg.start | number:'1.0-0'}}</th>
+        <th>{{reg.end | number:'1.0-0'}}</th>
+    </tr>
+</table>
+
+<audio controls id="merged-track">
+    <source src="" >
+</audio>
+
+<div class="btn">
+    <button (click)="playAudio()">Play Audio</button>
+    <button *ngIf="regionArr.length > 0" (click)="mergeAudioPart()">Merge</button>
+</div>

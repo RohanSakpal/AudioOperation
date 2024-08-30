@@ -11,23 +11,18 @@ const sampleBlockSize = 1152;
 
 addEventListener('message', async ({ data }: MessageEvent) => {
   try {
-    debugger
     const res = await encode(data.audioData);
     finish();
     postMessage({ res });
   } catch (err) {
-    console.error(err);
   }
 });
 
 function finish() {
-  debugger
   appendToBuffer(mp3Encoder.flush());
-  console.log('done encoding, size=', buffer.length);
 }
 
 function encode(audioData: { channels: Float32Array[]; sampleRate: number }): Promise<Int8Array[]> {
-  debugger
   if (audioData?.channels?.length === 1) {
     mp3Encoder = new lamejs.Mp3Encoder(1, audioData.sampleRate, 128);
     return new Promise((resolve, reject) => {
